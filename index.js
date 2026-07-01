@@ -46,14 +46,16 @@ async function sendWeatherUpdate() {
 
     if (weather) {
         const tempIcon = weather.temp >= 30 ? '🔥' : (weather.temp < 20 ? '❄️' : '☀️');
+        const uvIcon = weather.uvi >= 8 ? '🔴' : (weather.uvi >= 3 ? '🟠' : '🟢');
 
         const message = `
 ${tempIcon} *Cập nhật thời tiết TP.HCM* ${tempIcon}
--Nhiệt độ: *${Math.round(weather.temp)}°C*
--Cảm giác như: *${Math.round(weather.feels_like)}°C*
--Độ ẩm: *${weather.humidity}%*
--Trạng thái: *${weather.description}*
--Chỉ số UV: *${weather.uvi}*
+
+🌡️ Nhiệt độ: *${Math.round(weather.temp)}°C*
+🤔 Cảm giác như: *${Math.round(weather.feels_like)}°C*
+💧 Độ ẩm: *${weather.humidity}%*
+📝 Trạng thái: *${weather.description}*
+${uvIcon} Chỉ số UV: *${weather.uvi}*
         `;
 
         try {
