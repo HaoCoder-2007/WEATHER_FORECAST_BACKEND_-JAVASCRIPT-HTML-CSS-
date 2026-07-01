@@ -86,7 +86,7 @@ ${uvIcon} Chỉ số UV: *${weather.uvi}*
 }
 
 
-cron.schedule('* * * * *', sendWeatherUpdate, {
+cron.schedule('0 * * * *', sendWeatherUpdate, {
     scheduled: true,
     timezone: "Asia/Ho_Chi_Minh"
 });
