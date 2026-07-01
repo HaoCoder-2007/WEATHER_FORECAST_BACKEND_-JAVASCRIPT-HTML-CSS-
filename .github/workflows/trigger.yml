@@ -13,7 +13,7 @@ jobs:
       - name: Call Vercel Cron Job URL
         uses: actions/http-request@v1
         with:
-          url: ${{ secrets.VERCEL_CRON_URL }}
+          url: https://weather-forecast-backend-javascript.vercel.app/
           method: GET
           fail-on-error: "false"
 
