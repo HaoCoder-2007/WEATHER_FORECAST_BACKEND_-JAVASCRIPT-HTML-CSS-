@@ -61,20 +61,17 @@ ${tempIcon} *Cập nhật thời tiết TP.HCM* ${tempIcon}
 ${uvIcon} Chỉ số UV: *${weather.uvi}*
             `;
 
-            bot.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'Markdown' })
-                .then(() => {
-                    console.log("Gửi thông báo thành công!");
-                    res.status(200).json({ status: "success", message: "Notification sent." });
-                }).catch(err => {
-                    console.error("Lỗi khi gửi tin nhắn Telegram:", err.message);
-                    res.status(500).json({ status: "error", message: `Telegram error: ${err.message}` });
-                });
+            await bot.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'Markdown' });
+
+            console.log("Gửi thông báo thành công!");
+            return res.status(200).json({ status: "success", message: "Notification sent." });
+
         } else {
             console.log("Không có dữ liệu thời tiết để gửi.");
-            res.status(500).json({ status: "error", message: "Could not fetch weather data." });
+            return res.status(500).json({ status: "error", message: "Could not fetch weather data." });
         }
     } catch (error) {
-        console.error("Lỗi nghiêm trọng trong handler:", error.message);
-        res.status(500).json({ status: "error", message: error.message });
+        console.error("Lỗi trong handler (có thể từ getWeather hoặc sendMessage):", error.message);
+        return res.status(500).json({ status: "error", message: error.message });
     }
 }
