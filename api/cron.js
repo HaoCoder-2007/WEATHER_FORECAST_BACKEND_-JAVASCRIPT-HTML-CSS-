@@ -9,7 +9,10 @@ const {
     CITY_LON
 } = process.env;
 
-const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
+let bot;
+if (TELEGRAM_BOT_TOKEN) {
+    bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
+}
 
 async function getWeather() {
     const weatherApiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${CITY_LAT}&lon=${CITY_LON}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=vi`;
@@ -48,6 +51,12 @@ export default async function handler(req, res) {
         return res.status(200).end();
     }
 
+    if (!OPENWEATHER_API_KEY || !CITY_LAT || !CITY_LON) {
+        const errorMessage = "Missing required environment variables (API Key, Lat, Lon).";
+        console.error(errorMessage);
+        return res.status(500).json({ error: errorMessage });
+    }
+
     console.log("API endpoint triggered...");
 
     try {
@@ -67,6 +76,11 @@ ${uvIcon} Chỉ số UV: *${weather.uvi}*
         `;
                 
         if (req.headers['user-agent'].includes('github-actions')) {
+            if (!bot) {
+                console.error("Telegram Bot not initialized. Check TELEGRAM_BOT_TOKEN.");
+                // Vẫn trả về dữ liệu thời tiết, nhưng không gửi tin nhắn
+                return res.status(200).json(weather);
+            }
             console.log("Sending notification to Telegram...");
             await bot.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'Markdown' });
         }
