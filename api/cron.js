@@ -1,8 +1,42 @@
 const axios = require('axios');
 const { default: TelegramBot } = require('node-telegram-bot-api');
 
+const {
+    OPENWEATHER_API_KEY,
+    TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_ID,
+    CITY_LAT,
+    CITY_LON
+} = process.env;
+
+const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
+
+async function getWeather() {
+    const weatherApiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${CITY_LAT}&lon=${CITY_LON}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=vi`;
+    const uvApiUrl = `https://api.openweathermap.org/data/2.5/uvi?lat=${CITY_LAT}&lon=${CITY_LON}&appid=${OPENWEATHER_API_KEY}`;
+
+    const [weatherResponse, uvResponse] = await Promise.all([
+        axios.get(weatherApiUrl),
+        axios.get(uvApiUrl)
+    ]);
+
+    const weatherData = weatherResponse.data;
+    const uvData = uvResponse.data;
+
+    return {
+        temp: weatherData.main.temp,
+        feels_like: weatherData.main.feels_like,
+        humidity: weatherData.main.humidity,
+        description: weatherData.weather[0].description,
+        uvi: uvData.value,
+    };
+}
+
+/**
+@param {import('next').NextApiResponse} res
+ */
 function setCorsHeaders(res) {
-    res.setHeader('Access-Control-Allow-Origin', '*'); // Cho phép mọi nguồn
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
@@ -14,54 +48,28 @@ export default async function handler(req, res) {
         return res.status(200).end();
     }
 
-    const {
-        OPENWEATHER_API_KEY,
-        TELEGRAM_BOT_TOKEN,
-        TELEGRAM_CHAT_ID,
-        CITY_LAT,
-        CITY_LON
-    } = process.env;
-
-    const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
-
-    console.log("Cron job triggered: Fetching and sending weather update...");
+    console.log("API endpoint triggered...");
 
     try {
-        const weatherApiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${CITY_LAT}&lon=${CITY_LON}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=vi`;
-        const uvApiUrl = `https://api.openweathermap.org/data/2.5/uvi?lat=${CITY_LAT}&lon=${CITY_LON}&appid=${OPENWEATHER_API_KEY}`;
-
-        const [weatherResponse, uvResponse] = await Promise.all([
-            axios.get(weatherApiUrl),
-            axios.get(uvApiUrl)
-        ]);
-
-        const weatherData = weatherResponse.data;
-        const uvData = uvResponse.data;
-
-        const weather = {
-            temp: weatherData.main.temp,
-            feels_like: weatherData.main.feels_like,
-            humidity: weatherData.main.humidity,
-            description: weatherData.weather[0].description,
-            uvi: uvData.value,
-        };
+        const weather = await getWeather();
 
         const tempIcon = weather.temp >= 30 ? '🔥' : (weather.temp < 20 ? '❄️' : '☀️');
+        const uvIcon = weather.uvi >= 8 ? '🔴' : (weather.uvi >= 3 ? '🟠' : '🟢');
 
         const message = `
 ${tempIcon} *Cập nhật thời tiết TP.HCM* ${tempIcon}
 
--Nhiệt độ: *${Math.round(weather.temp)}°C*
--Cảm giác như: *${Math.round(weather.feels_like)}°C*
--Độ ẩm: *${weather.humidity}%*
--Trạng thái: *${weather.description}*
--Chỉ số UV: *${weather.uvi}*
+🌡️ Nhiệt độ: *${Math.round(weather.temp)}°C*
+🤔 Cảm giác như: *${Math.round(weather.feels_like)}°C*
+💧 Độ ẩm: *${weather.humidity}%*
+📝 Trạng thái: *${weather.description}*
+${uvIcon} Chỉ số UV: *${weather.uvi}*
         `;
                 
         if (req.headers['user-agent'].includes('github-actions')) {
+            console.log("Sending notification to Telegram...");
             await bot.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'Markdown' });
         }
-        console.log("Successfully sent weather update.");
 
         res.status(200).json(weather);
 
