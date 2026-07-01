@@ -1,0 +1,13 @@
+name: Hourly Weather Update
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
+
+jobs:
+  trigger_weather_bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Vercel Cron Job
+        run: curl -X GET "${{ secrets.VERCEL_CRON_URL }}"
