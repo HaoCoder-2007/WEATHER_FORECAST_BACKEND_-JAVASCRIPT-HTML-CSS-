@@ -4,11 +4,24 @@ const axios = require('axios');
 const { default: TelegramBot } = require('node-telegram-bot-api');
 const cron = require('node-cron');
 
+const requiredEnvVars = [
+    'OPENWEATHER_API_KEY',
+    'TELEGRAM_BOT_TOKEN',
+    'TELEGRAM_CHAT_ID',
+    'CITY_LAT',
+    'CITY_LON'
+];
+
+for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+        console.error(`Lỗi nghiêm trọng: Biến môi trường "${envVar}" chưa được thiết lập. Vui lòng kiểm tra tệp .env hoặc cài đặt trên máy chủ.`);
+        process.exit(1);
+    }
+}
+
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-const CITY_LAT = process.env.CITY_LAT;
-const CITY_LON = process.env.CITY_LON;
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 
