@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const axios = require('axios');
+const http = require('http');
 const { default: TelegramBot } = require('node-telegram-bot-api');
 const cron = require('node-cron');
 
@@ -22,6 +23,8 @@ for (const envVar of requiredEnvVars) {
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+const CITY_LAT = process.env.CITY_LAT;
+const CITY_LON = process.env.CITY_LON;
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 
@@ -82,10 +85,21 @@ ${uvIcon} Chỉ số UV: *${weather.uvi}*
     }
 }
 
+
 cron.schedule('0 * * * *', sendWeatherUpdate, {
     scheduled: true,
     timezone: "Asia/Ho_Chi_Minh"
 });
+console.log("Đã lập lịch gửi tin nhắn vào mỗi tiếng trong ngày.");
 
-console.log("Gửi thông báo lần đầu để kiểm tra...");
-sendWeatherUpdate();
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Weather Bot is running.\n');
+});
+
+const PORT = process.env.PORT || 10000;
+server.listen(PORT, () => {
+    console.log(`Server đang lắng nghe tại cổng ${PORT}`);
+    console.log("Gửi thông báo lần đầu để kiểm tra...");
+    sendWeatherUpdate();
+});
