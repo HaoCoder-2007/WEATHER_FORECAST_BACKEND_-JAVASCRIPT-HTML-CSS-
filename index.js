@@ -27,9 +27,24 @@ const CITY_LON = process.env.CITY_LON;
 
 const subscribedChatIds = new Set([process.env.TELEGRAM_CHAT_ID]);
 
-const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
+const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 
 console.log("Bot thời tiết đã khởi động...");
+
+// --- Đăng ký các lệnh với Telegram để hiển thị gợi ý ---
+const commands = [
+    { command: 'help', description: 'Hiển thị danh sách các lệnh' },
+    { command: 'get', description: 'Nhận bản tin thời tiết ngay lập tức' },
+    { command: 'add', description: 'Đăng ký nhận bản tin thời tiết hàng giờ' },
+    { command: 'delete', description: 'Hủy đăng ký nhận bản tin' },
+];
+
+bot.setMyCommands(commands)
+    .then(() => {
+        console.log("Đã đăng ký các lệnh thành công với Telegram.");
+    }).catch((error) => {
+        console.error("Lỗi khi đăng ký lệnh:", error.message);
+    });
 
 async function getWeather() {
     const weatherApiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${CITY_LAT}&lon=${CITY_LON}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=vi`;
@@ -57,7 +72,7 @@ async function getWeather() {
     }
 }
 
-async function sendWeatherUpdate() {
+async function sendWeatherUpdate(targetChatId = null) {
     console.log("Đang chuẩn bị gửi thông báo thời tiết...");
     const weather = await getWeather();
 
@@ -76,12 +91,19 @@ ${uvIcon} Chỉ số UV: *${weather.uvi}*
         `;
 
         try {
-            for (const chatId of subscribedChatIds) {
-                await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+            if (targetChatId) {
+                await bot.sendMessage(targetChatId, message, { parse_mode: 'Markdown' });
+                console.log(`Gửi thông báo theo yêu cầu đến chat ID: ${targetChatId}`);
+            } else {
+                for (const chatId of subscribedChatIds) {
+                    await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+                }
+                if (subscribedChatIds.size > 0) {
+                    console.log(`Gửi thông báo định kỳ thành công đến ${subscribedChatIds.size} cuộc trò chuyện!`);
+                }
             }
-            console.log(`Gửi thông báo thành công đến ${subscribedChatIds.size} cuộc trò chuyện!`);
         } catch (error) {
-            console.error("Lỗi khi gửi tin nhắn Telegram:", error.message, `(Chat ID: ${error.response?.body?.parameters?.migrate_to_chat_id || 'unknown'})`);
+            console.error("Lỗi khi gửi tin nhắn Telegram:", error.message);
         }
     } else {
         console.log("Không có dữ liệu thời tiết để gửi.");
@@ -89,11 +111,11 @@ ${uvIcon} Chỉ số UV: *${weather.uvi}*
 }
 
 
-cron.schedule('0 7 * * *', sendWeatherUpdate, {
+cron.schedule('0 * * * *', () => sendWeatherUpdate(), {
     scheduled: true,
     timezone: "Asia/Ho_Chi_Minh"
 });
-console.log("Đã lập lịch gửi tin nhắn vào mỗi tiếng trong ngày.");
+console.log("Đã lập lịch gửi tin nhắn vào đầu mỗi giờ.");
 
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -107,14 +129,34 @@ server.listen(PORT, () => {
     sendWeatherUpdate();
 });
 
-bot.onText(/\/subscribe/, (msg) => {
+
+bot.onText(/\/help/, (msg) => {
+    const chatId = msg.chat.id;
+    const helpMessage = `
+*DANH SÁCH LỆNH CỦA BOT THỜI TIẾT*
+
+/help - Hiển thị danh sách các lệnh.
+/get - Nhận bản tin thời tiết ngay lập tức.
+/add - Đăng ký nhận bản tin thời tiết hàng giờ.
+/delete - Hủy đăng ký nhận bản tin.
+    `;
+    bot.sendMessage(chatId, helpMessage, { parse_mode: 'Markdown' });
+});
+
+bot.onText(/\/get/, (msg) => {
+    const chatId = msg.chat.id;
+    bot.sendMessage(chatId, "Đang lấy dữ liệu thời tiết, vui lòng chờ...");
+    sendWeatherUpdate(chatId);
+});
+
+bot.onText(/\/add|\/subscribe/, (msg) => {
     const chatId = msg.chat.id;
     subscribedChatIds.add(String(chatId));
-    bot.sendMessage(chatId, "✅ Đã đăng ký nhận thông báo thời tiết hàng ngày thành công!");
+    bot.sendMessage(chatId, "✅ Đã đăng ký nhận thông báo thời tiết hàng giờ thành công!");
     console.log(`Chat ID mới đã đăng ký: ${chatId}`);
 });
 
-bot.onText(/\/unsubscribe/, (msg) => {
+bot.onText(/\/delete|\/unsubscribe/, (msg) => {
     const chatId = msg.chat.id;
     subscribedChatIds.delete(String(chatId));
     bot.sendMessage(chatId, "❌ Đã hủy đăng ký nhận thông báo. Bot sẽ không gửi tin nhắn nữa.");
