@@ -15,8 +15,8 @@ export default async function handler(req, res) {
     console.log("Cron job triggered: Fetching and sending weather update...");
 
     try {
-        const weatherApiUrl = `<https://api.openweathermap.org/data/2.5/weather?lat=${CITY_LAT}&lon=${CITY_LON}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=vi>`;
-        const uvApiUrl = `<https://api.openweathermap.org/data/2.5/uvi?lat=${CITY_LAT}&lon=${CITY_LON}&appid=${OPENWEATHER_API_KEY}>`;
+        const weatherApiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${CITY_LAT}&lon=${CITY_LON}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=vi`;
+        const uvApiUrl = `https://api.openweathermap.org/data/2.5/uvi?lat=${CITY_LAT}&lon=${CITY_LON}&appid=${OPENWEATHER_API_KEY}`;
 
         const [weatherResponse, uvResponse] = await Promise.all([
             axios.get(weatherApiUrl),
@@ -35,15 +35,16 @@ export default async function handler(req, res) {
         };
 
         const tempIcon = weather.temp >= 30 ? '🔥' : (weather.temp < 20 ? '❄️' : '☀️');
-        const uvIcon = weather.uvi >= 8 ? '🔴' : (weather.uvi >= 3 ? '🟠' : '🟢');
 
         const message = `
-        ${tempIcon} Cập nhật thời tiết TP.HCM ${tempIcon}
-        -Nhiệt độ: ${Math.round(weather.temp)}°C 
-        -Cảm giác như: ${Math.round(weather.feels_like)}°C 
-        -Độ ẩm: ${weather.humidity}% 
-        -Trạng thái: ${weather.description} 
-        -Chỉ số UV: ${weather.uvi} `;
+${tempIcon} *Cập nhật thời tiết TP.HCM* ${tempIcon}
+
+-Nhiệt độ: *${Math.round(weather.temp)}°C*
+-Cảm giác như: *${Math.round(weather.feels_like)}°C*
+-Độ ẩm: *${weather.humidity}%*
+-Trạng thái: *${weather.description}*
+-Chỉ số UV: *${weather.uvi}*
+        `;
                 
         await bot.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'Markdown' });
         console.log("Successfully sent weather update.");
