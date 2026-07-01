@@ -11,11 +11,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Call Vercel Cron Job URL
-        uses: actions/http-request@v1
-        with:
-          url: https://weather-forecast-backend-javascript.vercel.app/
-          method: GET
-          fail-on-error: "false"
-
-      - name: Check the result
-        run: echo "Request sent to Vercel."
+        run: curl -f "${{ secrets.VERCEL_CRON_URL }}"
