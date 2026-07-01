@@ -1,0 +1,21 @@
+name: Hourly Weather Bot Trigger
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: '0 * * * *'
+
+jobs:
+  call_vercel_endpoint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Vercel Cron Job URL
+        uses: actions/http-request@v1
+        with:
+          url: ${{ secrets.VERCEL_CRON_URL }}
+          method: GET
+          fail-on-error: "false"
+
+      - name: Check the result
+        run: echo "Request sent to Vercel."
