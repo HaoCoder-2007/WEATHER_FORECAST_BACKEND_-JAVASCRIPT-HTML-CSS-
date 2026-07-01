@@ -1,7 +1,19 @@
 const axios = require('axios');
 const { default: TelegramBot } = require('node-telegram-bot-api');
 
+function setCorsHeaders(res) {
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Cho phép mọi nguồn
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
 export default async function handler(req, res) {
+    setCorsHeaders(res);
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     const {
         OPENWEATHER_API_KEY,
         TELEGRAM_BOT_TOKEN,
