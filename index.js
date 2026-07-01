@@ -22,9 +22,10 @@ for (const envVar of requiredEnvVars) {
 
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const CITY_LAT = process.env.CITY_LAT;
 const CITY_LON = process.env.CITY_LON;
+
+const subscribedChatIds = new Set([process.env.TELEGRAM_CHAT_ID]);
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
 
@@ -75,10 +76,12 @@ ${uvIcon} Chỉ số UV: *${weather.uvi}*
         `;
 
         try {
-            await bot.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'Markdown' });
-            console.log("Gửi thông báo thành công!");
+            for (const chatId of subscribedChatIds) {
+                await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+            }
+            console.log(`Gửi thông báo thành công đến ${subscribedChatIds.size} cuộc trò chuyện!`);
         } catch (error) {
-            console.error("Lỗi khi gửi tin nhắn Telegram:", error.message);
+            console.error("Lỗi khi gửi tin nhắn Telegram:", error.message, `(Chat ID: ${error.response?.body?.parameters?.migrate_to_chat_id || 'unknown'})`);
         }
     } else {
         console.log("Không có dữ liệu thời tiết để gửi.");
@@ -86,7 +89,7 @@ ${uvIcon} Chỉ số UV: *${weather.uvi}*
 }
 
 
-cron.schedule('0 * * * *', sendWeatherUpdate, {
+cron.schedule('0 7 * * *', sendWeatherUpdate, {
     scheduled: true,
     timezone: "Asia/Ho_Chi_Minh"
 });
@@ -102,4 +105,18 @@ server.listen(PORT, () => {
     console.log(`Server đang lắng nghe tại cổng ${PORT}`);
     console.log("Gửi thông báo lần đầu để kiểm tra...");
     sendWeatherUpdate();
+});
+
+bot.onText(/\/subscribe/, (msg) => {
+    const chatId = msg.chat.id;
+    subscribedChatIds.add(String(chatId));
+    bot.sendMessage(chatId, "✅ Đã đăng ký nhận thông báo thời tiết hàng ngày thành công!");
+    console.log(`Chat ID mới đã đăng ký: ${chatId}`);
+});
+
+bot.onText(/\/unsubscribe/, (msg) => {
+    const chatId = msg.chat.id;
+    subscribedChatIds.delete(String(chatId));
+    bot.sendMessage(chatId, "❌ Đã hủy đăng ký nhận thông báo. Bot sẽ không gửi tin nhắn nữa.");
+    console.log(`Chat ID đã hủy đăng ký: ${chatId}`);
 });
