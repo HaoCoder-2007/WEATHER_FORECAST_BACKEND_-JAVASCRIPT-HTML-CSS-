@@ -31,7 +31,6 @@ const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 
 console.log("Bot thời tiết đã khởi động...");
 
-// --- Đăng ký các lệnh với Telegram để hiển thị gợi ý ---
 const commands = [
     { command: 'help', description: 'Hiển thị danh sách các lệnh' },
     { command: 'get', description: 'Nhận bản tin thời tiết ngay lập tức' },
@@ -130,35 +129,45 @@ server.listen(PORT, () => {
 });
 
 
-bot.onText(/\/help/, (msg) => {
+// --- Các lệnh điều khiển Bot ---
+bot.onText(/\/help/, async (msg) => {
     const chatId = msg.chat.id;
     const helpMessage = `
 *DANH SÁCH LỆNH CỦA BOT THỜI TIẾT*
 
 /help - Hiển thị danh sách các lệnh.
 /get - Nhận bản tin thời tiết ngay lập tức.
-/add - Đăng ký nhận bản tin thời tiết hàng giờ.
-/delete - Hủy đăng ký nhận bản tin.
+/add (hoặc /subscribe) - Đăng ký nhận bản tin thời tiết hàng giờ.
+/delete (hoặc /unsubscribe) - Hủy đăng ký nhận bản tin.
     `;
-    bot.sendMessage(chatId, helpMessage, { parse_mode: 'Markdown' });
+    try {
+        await bot.sendMessage(chatId, helpMessage, { parse_mode: 'Markdown' });
+    } catch (error) {
+        console.error(`Lỗi khi gửi tin nhắn /help đến ${chatId}:`, error.message);
+    }
 });
 
-bot.onText(/\/get/, (msg) => {
+bot.onText(/\/get/, async (msg) => {
     const chatId = msg.chat.id;
-    bot.sendMessage(chatId, "Đang lấy dữ liệu thời tiết, vui lòng chờ...");
-    sendWeatherUpdate(chatId);
+    try {
+        await bot.sendMessage(chatId, "Đang lấy dữ liệu thời tiết, vui lòng chờ...");
+        await sendWeatherUpdate(chatId);
+    } catch (error) {
+        console.error(`Lỗi khi xử lý lệnh /get cho ${chatId}:`, error.message);
+        await bot.sendMessage(chatId, " Rất tiếc, đã có lỗi xảy ra khi lấy dữ liệu thời tiết. Vui lòng thử lại sau.");
+    }
 });
 
-bot.onText(/\/add|\/subscribe/, (msg) => {
+bot.onText(/\/add|\/subscribe/, async (msg) => {
     const chatId = msg.chat.id;
     subscribedChatIds.add(String(chatId));
-    bot.sendMessage(chatId, "✅ Đã đăng ký nhận thông báo thời tiết hàng giờ thành công!");
+    await bot.sendMessage(chatId, "✅ Đã đăng ký nhận thông báo thời tiết hàng giờ thành công!");
     console.log(`Chat ID mới đã đăng ký: ${chatId}`);
 });
 
-bot.onText(/\/delete|\/unsubscribe/, (msg) => {
+bot.onText(/\/delete|\/unsubscribe/, async (msg) => {
     const chatId = msg.chat.id;
     subscribedChatIds.delete(String(chatId));
-    bot.sendMessage(chatId, "❌ Đã hủy đăng ký nhận thông báo. Bot sẽ không gửi tin nhắn nữa.");
+    await bot.sendMessage(chatId, "❌ Đã hủy đăng ký nhận thông báo. Bot sẽ không gửi tin nhắn nữa.");
     console.log(`Chat ID đã hủy đăng ký: ${chatId}`);
 });
