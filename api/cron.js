@@ -9,6 +9,8 @@ const {
     CITY_LON
 } = process.env;
 
+const bot = TELEGRAM_BOT_TOKEN ? new TelegramBot(TELEGRAM_BOT_TOKEN) : null;
+
 async function getWeather() {
     const weatherApiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${CITY_LAT}&lon=${CITY_LON}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=vi`;
     const uvApiUrl = `https://api.openweathermap.org/data/2.5/uvi?lat=${CITY_LAT}&lon=${CITY_LON}&appid=${OPENWEATHER_API_KEY}`;
@@ -34,7 +36,7 @@ async function getWeather() {
 }
 
 export default async function handler(req, res) {
-    if (!OPENWEATHER_API_KEY || !TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+    if (!bot || !OPENWEATHER_API_KEY || !TELEGRAM_CHAT_ID) {
         const errorMessage = "Lỗi: Thiếu các biến môi trường quan trọng trên Vercel.";
         console.error(errorMessage);
         return res.status(500).json({ error: errorMessage });
@@ -46,7 +48,6 @@ export default async function handler(req, res) {
         const weather = await getWeather();
 
         if (weather) {
-            const bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
             const tempIcon = weather.temp >= 30 ? '🔥' : (weather.temp < 20 ? '❄️' : '☀️');
             const uvIcon = weather.uvi >= 8 ? '🔴' : (weather.uvi >= 3 ? '🟠' : '🟢');
 
@@ -60,9 +61,14 @@ ${tempIcon} *Cập nhật thời tiết TP.HCM* ${tempIcon}
 ${uvIcon} Chỉ số UV: *${weather.uvi}*
             `;
 
-            await bot.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'Markdown' });
-            console.log("Gửi thông báo thành công!");
-            res.status(200).json({ status: "success", message: "Notification sent." });
+            bot.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'Markdown' })
+                .then(() => {
+                    console.log("Gửi thông báo thành công!");
+                    res.status(200).json({ status: "success", message: "Notification sent." });
+                }).catch(err => {
+                    console.error("Lỗi khi gửi tin nhắn Telegram:", err.message);
+                    res.status(500).json({ status: "error", message: `Telegram error: ${err.message}` });
+                });
         } else {
             console.log("Không có dữ liệu thời tiết để gửi.");
             res.status(500).json({ status: "error", message: "Could not fetch weather data." });
