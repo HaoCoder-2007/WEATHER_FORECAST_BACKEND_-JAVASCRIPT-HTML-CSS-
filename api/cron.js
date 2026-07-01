@@ -46,13 +46,15 @@ ${tempIcon} *Cập nhật thời tiết TP.HCM* ${tempIcon}
 -Chỉ số UV: *${weather.uvi}*
         `;
                 
-        await bot.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'Markdown' });
+        if (req.headers['user-agent'].includes('github-actions')) {
+            await bot.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'Markdown' });
+        }
         console.log("Successfully sent weather update.");
 
-        res.status(200).send('Weather update sent successfully.');
+        res.status(200).json(weather);
 
     } catch (error) {
         console.error("Error in cron job:", error.message);
-        res.status(500).send(`Error sending weather update: ${error.message}`);
+        res.status(500).json({ error: `Error sending weather update: ${error.message}` });
     }
 }
