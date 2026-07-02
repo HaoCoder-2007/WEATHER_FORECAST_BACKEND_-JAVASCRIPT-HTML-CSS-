@@ -110,11 +110,10 @@ ${uvIcon} Chỉ số UV: *${weather.uvi}*
 }
 
 
-cron.schedule('0 * * * *', () => sendWeatherUpdate(), {
+cron.schedule('* * * * *', () => sendWeatherUpdate(), {
     scheduled: true,
     timezone: "Asia/Ho_Chi_Minh"
 });
-console.log("Đã lập lịch gửi tin nhắn vào đầu mỗi giờ.");
 
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
