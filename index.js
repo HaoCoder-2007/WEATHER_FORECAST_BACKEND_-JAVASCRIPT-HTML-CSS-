@@ -116,6 +116,7 @@ cron.schedule('* * * * *', () => sendWeatherUpdate(), {
 });
 
 const server = http.createServer((req, res) => {
+    console.log(`[${new Date().toISOString()}] Nhận được yêu cầu ping. Bot vẫn hoạt động.`);
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Weather Bot is running.\n');
 });
@@ -128,7 +129,18 @@ server.listen(PORT, () => {
 });
 
 
-// --- Các lệnh điều khiển Bot ---
+bot.on('polling_error', (error) => {
+    console.error(`[LỖI POLLING]: ${error.code} - ${error.message}`);
+});
+
+bot.on('webhook_error', (error) => {
+    console.error(`[LỖI WEBHOOK]: ${error.code} - ${error.message}`);
+});
+
+bot.on('error', (error) => {
+    console.error('[LỖI CHUNG CỦA BOT]:', error);
+});
+
 bot.onText(/\/help/, async (msg) => {
     const chatId = msg.chat.id;
     const helpMessage = `
@@ -149,7 +161,6 @@ bot.onText(/\/help/, async (msg) => {
 bot.onText(/\/get/, async (msg) => {
     const chatId = msg.chat.id;
     try {
-        await bot.sendMessage(chatId, "Đang lấy dữ liệu thời tiết, vui lòng chờ...");
         await sendWeatherUpdate(chatId);
     } catch (error) {
         console.error(`Lỗi khi xử lý lệnh /get cho ${chatId}:`, error.message);
