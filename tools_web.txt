@@ -1,0 +1,2 @@
+Server (Render): https://dashboard.render.com/web/srv-d92bfiu7r5hc73fbshjg/deploys/dep-d92cp2rrjlhs73fea280?r=2026-07-01%4008%3A14%3A07%7E2026-07-01%4008%3A16%3A35
+Monitor (UptimeRobot): https://dashboard.uptimerobot.com/monitors

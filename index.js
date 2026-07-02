@@ -160,13 +160,13 @@ bot.onText(/\/get/, async (msg) => {
 bot.onText(/\/add|\/subscribe/, async (msg) => {
     const chatId = msg.chat.id;
     subscribedChatIds.add(String(chatId));
-    await bot.sendMessage(chatId, "✅ Đã đăng ký nhận thông báo thời tiết hàng giờ thành công!");
+    await bot.sendMessage(chatId, "✅ Đã đăng ký nhận thông báo thời tiết thành công!");
     console.log(`Chat ID mới đã đăng ký: ${chatId}`);
 });
 
 bot.onText(/\/delete|\/unsubscribe/, async (msg) => {
     const chatId = msg.chat.id;
     subscribedChatIds.delete(String(chatId));
-    await bot.sendMessage(chatId, "❌ Đã hủy đăng ký nhận thông báo. Bot sẽ không gửi tin nhắn nữa.");
+    await bot.sendMessage(chatId, "❌ Đã hủy đăng ký nhận thông báo.");
     console.log(`Chat ID đã hủy đăng ký: ${chatId}`);
 });
